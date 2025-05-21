@@ -1,5 +1,7 @@
 *.out
 *.bmp
+!sample_output_1.bmp
+!sample_output_2.bmp
 *.txt
 *.o
 .vscode/

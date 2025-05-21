@@ -7,6 +7,7 @@
 #include<fstream>
 #include<string.h>
 #include<queue>
+#include <filesystem>
 
 #include "point.h"
 #include "checker_board.h"
@@ -18,49 +19,14 @@
 #include "camera.h"
 #include "bitmap_image.hpp"
 
-bitmap_image b_img ("texture.bmp");
-
 Scene *scene;
 Camera *camera;
+std::string inputFile, outputFile, textureFile;
 
-void drawAll(){
-    scene->board.draw();
-    // drawChecker(checkerWidth);
-    Color lightColor(0.9,0.9,0.9);
-    Color spotLightColor(0.2,0.9,0.9);
-
-    for (Object* object : scene->objectArr) {
-        object->draw();
-    }
-    
-    // for (int i=0;i<numOfLights;i++){
-    //     Light lit=lightArr[i];
-    //     drawSphere(lit.aPoint,5,lightColor);
-    // }
-    // for (int i=0;i<numOfSpotLights;i++){
-    //     SpotLight sptlit=spotLightArr[i];
-    //     drawSphere(sptlit.aPoint,10,spotLightColor);
-    // }
-
-}
-
-double getRectangleT(point l,double width, point p,point vec){
-
-    double t=(l.z-p.z)/vec.z;
-    if (t<0) printf("l.z %lf p.z %lf and vec.z %lf",l.z,p.z,vec.z);
-    point intersect=p+vec*t;
-    //intersect.printPoint();
-    if(intersect.x>=l.x && intersect.x<=(l.x+width) && intersect.y>=l.y && intersect.y<=(l.y+width) ) {
-        //printf("four points %lf %lf %lf %lf\n",l.x,l.x+width,l.y,l.y+width);
-        return t;
-    }
-    return -1;
-}
-
-void keyboardListener(unsigned char key, int x,int y){
-	switch(key){
+void keyboardListener(unsigned char key, int x,int y) {
+	switch(key) {
         case '0':
-            traceTheRay(scene, camera);
+            traceRays(scene, camera, outputFile, textureFile);
             break;
 
 	    case '1':
@@ -94,38 +60,46 @@ void keyboardListener(unsigned char key, int x,int y){
             break;
 
         case ' ':
-            textureMode=1-textureMode;
-            if (textureMode==1) printf("Texture Mode Enabled\n");
-            else if (textureMode==0) printf("Texture Mode Disabled\n");
+            if (!textureFile.empty()) {
+                textureMode=1-textureMode;
+                if (textureMode==1) printf("Texture Mode Enabled\n");
+                else if (textureMode==0) printf("Texture Mode Disabled\n");
+            }
 
 		default:
 			break;
 	}
 }
 
-void specialKeyListener(int key, int x,int y){
-	switch(key){
-	    case GLUT_KEY_UP:		 // up arrow
+void specialKeyListener(int key, int x,int y) {
+	switch(key) {
+	    case GLUT_KEY_UP: 
+            // up arrow
             camera->pos = camera->pos + camera->l;
 			break;
 
-		case GLUT_KEY_DOWN:		 // down arrow
+		case GLUT_KEY_DOWN:
+            // down arrow
             camera->pos = camera->pos - camera->l;
 			break;
 
-		case GLUT_KEY_RIGHT:     // right arrow
+		case GLUT_KEY_RIGHT:
+            // right arrow
             camera->pos = camera->pos + camera->r;
 			break;
 
-		case GLUT_KEY_LEFT:      // left arrow
+		case GLUT_KEY_LEFT:
+            // left arrow
             camera->pos = camera->pos - camera->r;
 			break;
 
-		case GLUT_KEY_PAGE_UP:   // page up
+		case GLUT_KEY_PAGE_UP:
+            // page up
             camera->pos = camera->pos + camera->u;
 			break;
 
-		case GLUT_KEY_PAGE_DOWN:  // page down
+		case GLUT_KEY_PAGE_DOWN:
+            // page down
             camera->pos = camera->pos - camera->u;
 			break;
 
@@ -134,7 +108,7 @@ void specialKeyListener(int key, int x,int y){
 	}
 }
 
-void display(){
+void display() {
 	// clear the display
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glClearColor(0, 0, 0, 0);	//color black
@@ -162,24 +136,24 @@ void display(){
 	// again select MODEL-VIEW
 	glMatrixMode(GL_MODELVIEW);
 
-	// draw all objects
-    drawAll();
+	// draw the scene
+    scene->draw();
 
 	// ADD this line in the end --- if you use double buffer (i.e. GL_DOUBLE)
 	glutSwapBuffers();
 }
 
-void animate(){
+void animate() {
 	//codes for any changes in Models, Camera
 	glutPostRedisplay();
 }
 
-void init(){
+void init(const std::string& input) {
 	// clear the screen
 	glClearColor(0,0,0,0);
 
     scene = new Scene();
-    scene->loadFromFile("input.txt");
+    scene->loadFromFile(input);
 
     camera = new Camera(
         point(100,100,0),
@@ -206,7 +180,37 @@ void init(){
 	
 }
 
-int main(int argc, char **argv){
+int main(int argc, char **argv) {
+    for (int i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
+
+        if (arg == "--input" && i + 1 < argc) {
+            inputFile = argv[++i];
+        } else if (arg == "--output" && i + 1 < argc) {
+            outputFile = argv[++i];
+        } else if (arg == "--texture" && i + 1 < argc) {
+            textureFile = argv[++i];
+        } else {
+            std::cerr << "Unknown or malformed argument: " << arg << "\n";
+            return 1;
+        }
+    }
+
+    if (inputFile.empty() || outputFile.empty()) {
+        std::cerr << "Error: --input and --output are required.\n";
+        return 1;
+    }
+
+    if (!std::filesystem::exists(inputFile)) {
+        std::cerr << "Error: input file '" << inputFile << "' does not exist.\n";
+        return 1;
+    }
+
+    if (!textureFile.empty() && !std::filesystem::exists(textureFile)) {
+        std::cerr << "Error: texture file '" << textureFile << "' does not exist.\n";
+        return 1;
+    }
+
 	glutInit(&argc,argv);
 	glutInitWindowSize(500, 500);
 	glutInitWindowPosition(0, 0);
@@ -214,7 +218,7 @@ int main(int argc, char **argv){
 
 	glutCreateWindow("Ray Tracer");
 
-	init();
+	init(inputFile);
 
 	glEnable(GL_DEPTH_TEST);	// enable Depth Testing
 

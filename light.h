@@ -7,17 +7,17 @@ class Light{
 public:
     point aPoint;
     double falloff;
-    Light(point p,double f){aPoint=p; falloff=f;}
+
+    Light(point p, double f) : aPoint(p), falloff(f) {}
 };
 
-class SpotLight:public Light{
-public:
+class SpotLight : public Light{
+public: 
     point look;
     double cutoff;
-    SpotLight(point p,double f,point lk,double c):Light(p,f){
-        look=lk;
-        cutoff=c;
-    }
+
+    SpotLight(point p, double f, point lk, double c):
+        Light(p,f), look(lk), cutoff(c) {}
 };
 
 #endif

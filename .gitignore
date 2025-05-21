@@ -1,4 +1,5 @@
 *.out
 *.bmp
 *.txt
+*.o
 .vscode/

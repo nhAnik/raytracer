@@ -2,14 +2,12 @@
 #define CHECKERBOARDH
 
 #include "point.h"
-#include "draw.h"
+#include "GL/glut.h"
 
 const int inf = 50;
 
 class CheckerBoard {
-    
-
-    public:
+public:
     double width;
     double ambient;
     double diffuse;
@@ -22,15 +20,28 @@ class CheckerBoard {
     void draw() {
         int white=0, black;
 
-        for(int i=-inf; i<inf; i++){
+        for(int i=-inf; i<inf; i++) {
             black=white;
-            for(int j=-inf; j<inf; j++){
-                // point tempPoint(i*width,j*width,0);
+            for(int j=-inf; j<inf; j++) {
                 drawSquare(point(i*width, j*width, 0), width, black);
                 black=1-black;
             }
             white=1-white;
         }
+    }
+
+    inline void drawSquare(point p, double width, int color) {
+        if (color==0) glColor3f(0.0,0.0,0.0);
+        else if (color==1) glColor3f(1.0,1.0,1.0);
+        glBegin(GL_QUADS);
+        {
+            glVertex3f(p.x, p.y, p.z);
+            glVertex3f(p.x+width, p.y, p.z);
+            glVertex3f(p.x+width, p.y+width, p.z);
+            glVertex3f(p.x, p.y+width, p.z);
+
+        }
+        glEnd();
     }
 };
 
